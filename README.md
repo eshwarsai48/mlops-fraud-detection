@@ -18,7 +18,7 @@ including **monitoring with Prometheus & Azure Monitor** and **CI/CD with GitHub
 
 ## High-Level Flow
 1. Train a fraud detection ML model
-2. Wrap it in a FastAPI application
+2. Serve it via a FastAPI inference service
 3. Dockerize the API
 4. Provision infrastructure with Terraform
 5. Deploy container to AKS using Helm
