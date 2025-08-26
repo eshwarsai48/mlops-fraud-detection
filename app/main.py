@@ -6,6 +6,7 @@ import joblib
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel
+from typing import Optional, Any
 
 APP_VERSION = os.getenv("APP_VERSION", "0.1.0")
 MODEL_ARTIFACT = os.getenv("MODEL_ARTIFACT", "model/pipeline.joblib")
@@ -29,20 +30,24 @@ class PredictResponse(BaseModel):
 _model: Optional[Any]= None
 _expected_features: Optional[List[str]] = None
 _supports_proba: bool= False
+_allowed_type_categories: Optional[list] = None
 
 def _get_expected_features(m) -> Optional[List[str]]:
-    names = getattr(m, "feature_names_in", None) or getattr(m, "raw_feature_names_in_", None)
+    names = getattr(m, "feature_names_in_", None)
+    if names is None:
+        names = getattr(m, "raw_feature_names_in_", None)
     return list(names) if names is not None else None
 
 #-------Run on Start Up-------
 @app.on_event("startup")
 def startup():
-    global _model,_expected_features,_supports_proba
+    global _model,_expected_features,_supports_proba, _allowed_type_categories
     if not os.path.exists(MODEL_ARTIFACT):
         raise RuntimeError(f"Model {MODEL_ARTIFACT} not found")
     _model = joblib.load(MODEL_ARTIFACT)
     _expected_features = _get_expected_features(_model)
     _supports_proba = hasattr(_model, "predict_proba")
+    _allowed_type_categories = getattr(_model, "type_categories_", None)
 
 #------Health checks--------
 @app.get("/healthcheck")
@@ -53,6 +58,9 @@ def healthcheck():
         "version": APP_VERSION,
         "expected_features": _expected_features
     }
+    if _allowed_type_categories is not None:
+        body["allowed_type_categories"] = _allowed_type_categories
+    return body
 @app.get("/ready")
 def ready():
     if _model is None:
