@@ -1,0 +1,44 @@
+# SMOKE CHECKS FOR FAST API
+
+## Start the Server
+export MODEL_ARTIFACT=model/pipeline.joblib
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+## Is the process up ?
+curl -s http://localhost:8000/healthcheck | jq
+
+Expected Response:
+{
+  "status": "ok",
+  "model_loaded": true,
+  "version": "0.1.0",
+  "expected_features": [
+    "type",
+    "amount",
+    "amount_log",
+    "tx_count_2h",
+    "tx_count_6h",
+    "tx_avg_amt_2h",
+    "tx_sum_amt_6h",
+    "tx_max_amt_2h",
+    "hours_since_last_tx",
+    "tx_count_so_far",
+    "is_returning_user"
+  ]
+}
+
+## Check to see if the model is ready ?
+
+Expected Response:
+HTTP/1.1 200 OK
+date: Tue, 26 Aug 2025 09:49:13 GMT
+server: uvicorn
+content-length: 36
+content-type: application/json
+
+If 503, the model failed to load (check MODEL_ARTIFACT path)
+
+## Prediction (Single Record):
+
+
+
