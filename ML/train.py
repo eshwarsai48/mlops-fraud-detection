@@ -6,7 +6,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, roc_auc_score
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import OneHotEncoder, FunctionTransformer
+from ML.dtypes import cast_fn
 import joblib
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -140,14 +141,30 @@ X_val, X_test, y_val, y_test = train_test_split(
 # ──────────────────────────────────────────────────────────────────────────────
 # Build Pipeline
 # ──────────────────────────────────────────────────────────────────────────────
+categorical_cols = ["type"]
+numeric_cols = [
+    "amount", "amount_log",
+    "tx_count_2h", "tx_count_6h",
+    "tx_avg_amt_2h", "tx_sum_amt_6h", "tx_max_amt_2h",
+    "hours_since_last_tx", "tx_count_so_far",
+    "is_returning_user",
+]
+all_cols = categorical_cols + numeric_cols
+type_cats = None
+if "type" in X_train.columns:
+    type_cats = X_train["type"].astype("category").cat.categories.tolist()
+
+caster = FunctionTransformer(cast_fn, validate=False, feature_names_out="one-to-one", kw_args={
+        "cats": type_cats,
+        "num_cols": numeric_cols,
+        "all_cols": all_cols,
+        "categorical_col": "type",
+    },)
 
 # Handle categorical depending on model choice
 use_xgb = MODEL_TYPE == "xgb"
 if use_xgb:
     import xgboost as xgb  # fixed import name
-    # Preprocessing: passthrough (keep DataFrame with 'type' as category).
-    preprocessor = "passthrough" # whole preprocessor is "passthrough" so XGBoost sees the original columns (including the categorical type) exactly as trained.
-
     # Imbalance handling in a memory-friendly way
     pos = max(1, int(y_train.sum()))  # fraud transactions
     neg = int((y_train == 0).sum())  # non-fraud transactions
@@ -170,7 +187,7 @@ if use_xgb:
         early_stopping_rounds=50,
     )
     pipe = Pipeline(steps=[
-        ("preprocessor", preprocessor),
+        ("cast", caster),
         ("model", model),
     ])
 else:
@@ -197,7 +214,7 @@ else:
         class_weight="balanced_subsample",
         random_state=RANDOM_SEED,
     )
-    pipe = Pipeline(steps=[
+    pipe = Pipeline(steps=[("cast",caster),
         ("preprocessor", preprocessor),
         ("model", model),
     ])
@@ -218,8 +235,8 @@ expected = getattr(pipe, "feature_names_in_", None)
 if expected is None:
     expected = np.asarray(X_train.columns, dtype=object)
     setattr(pipe, "raw_feature_names_in_", expected)   # cleaner than pipe.__dict__[...]=...
-
-print("Expected input columns for serving:", list(expected))
+setattr(pipe, "raw_feature_names_in_", np.asarray(all_cols, dtype=object))  #helpful metadata for API check
+setattr(pipe, "type_categories_", type_cats or [])
 
 
 
