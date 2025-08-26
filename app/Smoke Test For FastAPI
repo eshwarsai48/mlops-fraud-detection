@@ -1,10 +1,10 @@
 # SMOKE CHECKS FOR FAST API
 
-## Start the Server
+1. Start the Server
 export MODEL_ARTIFACT=model/pipeline.joblib
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
-## Is the process up ?
+2. Is the process up ?
 curl -s http://localhost:8000/healthcheck | jq
 
 Expected Response:
@@ -27,7 +27,7 @@ Expected Response:
   ]
 }
 
-## Check to see if the model is ready ?
+3. Check to see if the model is ready ?
 
 Expected Response:
 HTTP/1.1 200 OK
@@ -38,7 +38,121 @@ content-type: application/json
 
 If 503, the model failed to load (check MODEL_ARTIFACT path)
 
-## Prediction (Single Record):
+4. Prediction (Single Record):
+curl -s "http://localhost:8000/predict?return_proba=true" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "records":[
+          {
+            "type":"TRANSFER",
+            "amount":9000.0,
+            "amount_log":9.104979,
+            "tx_count_2h":3,
+            "tx_count_6h":7,
+            "tx_avg_amt_2h":3500.0,
+            "tx_sum_amt_6h":21000.0,
+            "tx_max_amt_2h":9000.0,
+            "hours_since_last_tx":1.0,
+            "tx_count_so_far":42,
+            "is_returning_user":1
+          }
+        ]
+      }' | jq
+
+Expect JSON like:
+{
+  "predictions": [0 or 1],
+  "probabilities": [0.XX],
+  "model_version": "0.1.0",
+  "inference_ms": 2.7
+}
+
+
+5. Toggle Probabilities
+With probs (default): ?return_proba=true
+Without probs:
+curl -s "http://localhost:8000/predict?return_proba=false" -H "Content-Type: application/json" -d '{"records":[{            "type":"TRANSFER",
+            "amount":9000.0,
+            "amount_log":9.104979,
+            "tx_count_2h":9,
+            "tx_count_6h":17,
+            "tx_avg_amt_2h":13500.0,
+            "tx_sum_amt_6h":210000.0,
+            "tx_max_amt_2h":9000.0,
+            "hours_since_last_tx":1.0,
+            "tx_count_so_far":42,
+            "is_returning_user":1}]}' | jq
+probabilities should be omitted (because response_model_exclude_none=True).
+
+6. Schema validation tests
+Missing feature → 422
+curl -s "http://localhost:8000/predict" \
+  -H "Content-Type: application/json" \
+  -d '{"records":[{"type":"TRANSFER"}]}' | jq
+
+example:
+  "detail": {
+    "message": "Missing required features",
+    "missing_features": [
+      "amount",
+      "amount_log",
+      "tx_count_2h",
+      "tx_count_6h",
+      "tx_avg_amt_2h",
+      "tx_sum_amt_6h",
+      "tx_max_amt_2h",
+      "hours_since_last_tx",
+      "tx_count_so_far",
+      "is_returning_user"
+    ],
+    "expected_features": [
+      "type",
+      "amount",
+      "amount_log",
+      "tx_count_2h",
+      "tx_count_6h",
+      "tx_avg_amt_2h",
+      "tx_sum_amt_6h",
+      "tx_max_amt_2h",
+      "hours_since_last_tx",
+      "tx_count_so_far",
+      "is_returning_user"
+    ],
+    "received_columns": [
+      "type"
+    ]
+  }
+}
+
+
+7. Batch scoring
+curl -s "http://localhost:8000/predict?return_proba=true" \
+  -H "Content-Type: application/json" \
+  -d '{"records":[{            "type":"TRANSFER",
+            "amount":9000.0,
+            "amount_log":9.104979,
+            "tx_count_2h":3,
+            "tx_count_6h":7,
+            "tx_avg_amt_2h":3500.0,
+            "tx_sum_amt_6h":21000.0,
+            "tx_max_amt_2h":9000.0,
+            "hours_since_last_tx":1.0,
+            "tx_count_so_far":42,
+            "is_returning_user":1},{"type":"TRANSFER",
+            "amount":9000.0,
+            "amount_log":9.104979,
+            "tx_count_2h":9,
+            "tx_count_6h":17,
+            "tx_avg_amt_2h":13500.0,
+            "tx_sum_amt_6h":210000.0,
+            "tx_max_amt_2h":119000.0,
+            "hours_since_last_tx":1.0,
+            "tx_count_so_far":142,
+            "is_returning_user":1}]}' | jq
+
+Expect 2 predictions and 2 probs.
+
+8. 
 
 
 
