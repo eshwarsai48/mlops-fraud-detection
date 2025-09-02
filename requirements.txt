@@ -1,6 +1,7 @@
 # FastAPI app (Py3.11-compatible pins w/ NumPy 1.x)
 fastapi==0.110.0
 uvicorn[standard]==0.29.0
+gunicorn==21.2.0
 
 # Pydantic v2 (FastAPI 0.110 expects this)
 pydantic==2.6.4
