@@ -10,3 +10,8 @@ model/
 .idea/
 .idea/
 *:*
+
+# Virtualenvs
+.venv*
+venv/
+
