@@ -19,12 +19,13 @@ including **monitoring with Prometheus & Azure Monitor** and **CI/CD with GitHub
 ## High-Level Flow
 1. Train a fraud detection ML model
 2. Serve it via a FastAPI inference service
+4. Dockerize the API
 Swagger UI → http://localhost:8000/docs
 Healthcheck → http://localhost:8000/healthcheck
-4. Dockerize the API
-5. Provision infrastructure with Terraform
-6. Deploy container to AKS using Helm
-7. Monitor with Prometheus & Azure Monitor
-8. Automate deployment with GitHub Actions
+ReDoc → http://localhost:8000/
+6. Provision infrastructure with Terraform
+7. Deploy container to AKS using Helm
+8. Monitor with Prometheus & Azure Monitor
+9. Automate deployment with GitHub Actions
 
 ---
