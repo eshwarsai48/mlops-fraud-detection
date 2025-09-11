@@ -8,6 +8,7 @@
 .terraform.tfstate.lock.info
 *.plan
 crash.log
+*.lock.hcl
 
 # Local override configs
 override.tf
