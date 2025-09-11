@@ -1,17 +1,49 @@
-data/
-model/
-*.csv
-*.pkl
-*.bin
+# -------------------------
+# Terraform
+# -------------------------
+**/.terraform/*
+**/.terraform
+*.tfstate
+*.tfstate.*
+.terraform.tfstate.lock.info
+*.plan
+crash.log
+
+# Local override configs
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# -------------------------
+# Python
+# -------------------------
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# Virtualenvs
+.venv/
+venv/
+
+# -------------------------
+# IDE / Editor
+# -------------------------
+.idea/
+.vscode/
+.DS_Store
+
+# -------------------------
+# Data / Models
+# -------------------------
 Data/
 *.csv
 *.pkl
+*.bin
+*.joblib
+*.json
 model/
-.idea/
-.idea/
-*:*
-
-# Virtualenvs
-.venv*
-venv/
-
