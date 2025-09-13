@@ -13,10 +13,10 @@ variable "tfstate_location" {
 variable "tfstate_sa_name" {
   type        = string
   description = "Globally-unique Storage Account name for state (lowercase, 3-24 chars)"
+  default     = "mlopstfstatesa2025"
 }
-
 variable "tfstate_container_name" {
   type        = string
   description = "Blob container name for state"
-  default     = "tfstate"
+  default     = "tfstate-container"
 }
