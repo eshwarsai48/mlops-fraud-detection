@@ -22,3 +22,21 @@ module "aks" {
    node_size           = var.node_size
    acr_id              = module.acr.id
  }
+
+
+module "dns" {
+  source = "../../modules/dns"
+  resource_group_name = module.resource_group.name
+  domain_name  = var.domain_name
+  subdomain    = "fraud-api"
+  ingress_ipv4 = module.ingress_ip.ingress_ip
+  ttl          = 300
+}
+
+module "ingress_ip" {
+  source = "../../modules/ingress-ip"
+  resource_group_name = module.resource_group.name
+  location            = module.resource_group.location
+}
+
+

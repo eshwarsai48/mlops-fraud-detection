@@ -9,3 +9,7 @@ acr_sku    = "Basic"
 aks_name   = "mlops-dev-aks"
 node_size  = "Standard_B2s"
 node_count = 1
+
+# DNS
+domain_name        = "myapp.it.com"
+ingress_public_ip  = "20.185.111.230"
