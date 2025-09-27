@@ -24,3 +24,13 @@ variable "node_size" {
   type = string
   default = "Standard_B2s"
 }
+
+variable "domain_name" {
+  description = "Apex domain (e.g., myapp.com)"
+  type        = string
+}
+
+variable "ingress_public_ip" {
+  description = "Ingress controller EXTERNAL-IP"
+  type        = string
+}
