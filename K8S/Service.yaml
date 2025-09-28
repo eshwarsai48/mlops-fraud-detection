@@ -3,9 +3,10 @@ kind: Service
 metadata:
   name: fraud-api-service
 spec:
-  type: LoadBalancer   # exposes a public IP in AKS
+  type: ClusterIP
   selector:
     app: fraud-api
   ports:
-    - port: 80        # external port
+    - port: 80
       targetPort: 8000
+      protocol: TCP

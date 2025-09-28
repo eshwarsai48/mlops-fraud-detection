@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: fraud-api-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: fraudapp-encryption-prod
+spec:
+  tls:
+  - hosts:
+    - fraud-api.myapp.it.com
+    secretName: fraud-api-tls
+  rules:
+  - host: fraud-api.myapp.it.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: fraud-api-service
+            port:
+              number: 80

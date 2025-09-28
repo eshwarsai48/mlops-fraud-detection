@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: fraud-api-cert
+  namespace: default
+spec:
+  secretName: fraud-api-tls
+  dnsNames:
+  - fraud-api.myapp.it.com
+  issuerRef:
+    name: fraudapp-encryption-prod
+    kind: ClusterIssuer
