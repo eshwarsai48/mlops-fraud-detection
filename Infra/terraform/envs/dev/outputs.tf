@@ -8,6 +8,14 @@ output "aks_kubeconfig" {
   value = module.aks.kube_config
   sensitive = true
 }
+output "aks_cluster_principal_id" {
+  value = module.aks.cluster_principal_id
+}
+
+output "aks_kubelet_object_id" {
+  value = module.aks.kubelet_object_id
+}
+
 output "dns_zone_nameservers" {
   value = module.dns.name_servers
 }
