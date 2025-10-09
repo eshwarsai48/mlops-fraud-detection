@@ -5,17 +5,36 @@ from typing import Any, Dict, List, Optional
 import joblib
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Query
-from pydantic import BaseModel
+from prometheus_fastapi_instrumentator import Instrumentator
+from pydantic import BaseModel,ConfigDict
 from typing import Optional, Any
+from contextlib import asynccontextmanager
 
 APP_VERSION = os.getenv("APP_VERSION", "0.1.0")
 MODEL_ARTIFACT = os.getenv("MODEL_ARTIFACT", "model/pipeline.joblib")
 
+#-------Run on Start Up-------
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global _model,_expected_features,_supports_proba, _allowed_type_categories
+    if not os.path.exists(MODEL_ARTIFACT):
+        raise RuntimeError(f"Model {MODEL_ARTIFACT} not found")
+    _model = joblib.load(MODEL_ARTIFACT)
+    _expected_features = _get_expected_features(_model)
+    _supports_proba = hasattr(_model, "predict_proba")
+    _allowed_type_categories = getattr(_model, "type_categories_", None)
+    print("Model loaded successfully")
+    yield
+
+
 app = FastAPI(
     title="Fraud Detection Inference API",
     version=APP_VERSION,
-    description="Serves fraud predictions from a trained pipeline."
+    description="Serves fraud predictions from a trained pipeline.",
+    lifespan=lifespan
 )
+
+Instrumentator().instrument(app).expose(app) # to expose on prometheus
 #----Request/Response----
 class PredictRequest(BaseModel):
     records: List[Dict[str, Any]]
@@ -25,6 +44,7 @@ class PredictResponse(BaseModel):
     probabilities: Optional[List[float]] = None
     model_version: Optional[str] = None
     inference_ms: float #latency for the call in ms
+    model_config = ConfigDict(protected_namespaces=())
 
 # ---Module level cache at start up----
 _model: Optional[Any]= None
@@ -38,16 +58,7 @@ def _get_expected_features(m) -> Optional[List[str]]:
         names = getattr(m, "raw_feature_names_in_", None)
     return list(names) if names is not None else None
 
-#-------Run on Start Up-------
-@app.on_event("startup")
-def startup():
-    global _model,_expected_features,_supports_proba, _allowed_type_categories
-    if not os.path.exists(MODEL_ARTIFACT):
-        raise RuntimeError(f"Model {MODEL_ARTIFACT} not found")
-    _model = joblib.load(MODEL_ARTIFACT)
-    _expected_features = _get_expected_features(_model)
-    _supports_proba = hasattr(_model, "predict_proba")
-    _allowed_type_categories = getattr(_model, "type_categories_", None)
+
 
 #------Health checks--------
 @app.get("/healthcheck")
@@ -66,6 +77,8 @@ def ready():
     if _model is None:
         raise HTTPException(status_code=503, detail="Model not found")
     return {"status": "ready", "version": APP_VERSION}
+
+
 
 #---Prediction Endpoint---
 @app.post("/predict", response_model=PredictResponse,response_model_exclude_none=True) #Any fields whose value is None are omitted from the final JSON.
@@ -112,6 +125,8 @@ def predict(
     )
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Inference error: {e}")
+
+
 
 
 
