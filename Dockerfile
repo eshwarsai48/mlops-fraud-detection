@@ -5,7 +5,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Optional: build tools for some wheels (scikit-learn, etc.)
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential curl \
     && rm -rf /var/lib/apt/lists/* # Delete cached packages for lean images
@@ -37,6 +37,8 @@ COPY app /app/app
 COPY ML /app/ML
 COPY model /app/model
 COPY gunicorn_conf.py /app/gunicorn_conf.py
+# Fix ownership + permissions
+RUN chown -R appuser:appuser /app && chmod -R 755 /app
 
 # Let the app know where the model artifact is (adjust if needed)
 ENV MODEL_PATH=/app/model/pipeline.joblib
@@ -49,4 +51,7 @@ USER appuser
 EXPOSE 8000
 
 # Default: production server with Gunicorn+Uvicorn workers
+#ENTRYPOINT ["gunicorn"]
+#CMD ["-c", "gunicorn_conf.py", "app.main:app"]
 CMD ["gunicorn", "-c", "gunicorn_conf.py", "app.main:app"]
+

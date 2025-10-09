@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: fraud-api
-          image: mlopsdevacr2025.azurecr.io/fraud-api:0.1.4
+          image: mlopsdevacr2025.azurecr.io/fraud-api:0.1.5
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
