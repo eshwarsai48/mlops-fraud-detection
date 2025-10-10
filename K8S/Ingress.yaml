@@ -14,6 +14,20 @@ spec:
   - host: fraud-api.myapp.it.com
     http:
       paths:
+      - path: /monitoring
+        pathType: Prefix
+        backend:
+          service:
+            name: prometheus-grafana
+            port:
+              number: 80
+      - path: /login
+        pathType: Prefix
+        backend:
+          service:
+            name: prometheus-grafana
+            port:
+              number: 80
       - path: /
         pathType: Prefix
         backend:
@@ -21,3 +35,4 @@ spec:
             name: fraud-api-service
             port:
               number: 80
+
