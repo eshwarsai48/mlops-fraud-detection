@@ -1,7 +1,7 @@
 #!/bin/bash
 ACTION=$1 # up or down
-RG="mlops-tfstate-rg"
-CLUSTER="fraud-aks"
+RG="mlops-dev-rg"
+CLUSTER="mlops-dev-aks"
 NODEPOOL="default"
 
 if [ "$ACTION" == "up" ]; then
