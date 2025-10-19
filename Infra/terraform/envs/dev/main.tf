@@ -39,4 +39,3 @@ module "ingress_ip" {
   location            = module.resource_group.location
 }
 
-

@@ -20,3 +20,5 @@ variable "acr_id" {
   type        = string
   description = "ACR resource ID for AcrPull role assignment"
 }
+
+

@@ -27,3 +27,6 @@ output "ingress_static_ip" {
   value = module.ingress_ip.ingress_ip
 }
 
+
+
+

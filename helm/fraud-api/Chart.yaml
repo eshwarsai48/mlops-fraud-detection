@@ -1,0 +1,6 @@
+apiVersion: v2
+name: fraud-api
+description: Simple Helm chart for FastAPI fraud detection app
+type: application
+version: 0.1.0
+appVersion: "0.1.5"
