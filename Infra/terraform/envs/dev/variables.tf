@@ -34,3 +34,7 @@ variable "ingress_public_ip" {
   description = "Ingress controller EXTERNAL-IP"
   type        = string
 }
+variable "prefix" {
+  description = "Prefix used for naming resources"
+  default     = "fraud" # or whatever short name you prefer
+}

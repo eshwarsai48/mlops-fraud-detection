@@ -1,0 +1,39 @@
+# ==== Image ====
+image:
+  repository: mlopsdevacr2025.azurecr.io/fraud-api
+  tag: "0.1.5"
+  pullPolicy: Always
+
+# ==== Replicas ====
+replicaCount: 2
+
+# ==== Service ====
+service:
+  type: ClusterIP
+  port: 80
+
+# ==== App Environment Variables ====
+env:
+  - name: MODEL_PATH
+    value: "model/pipeline.joblib"
+
+# ==== Resources ====
+resources:
+  requests:
+    cpu: "250m"
+    memory: "512Mi"
+  limits:
+    cpu: "500m"
+    memory: "1Gi"
+
+# ==== Ingress ====
+ingress:
+  enabled: true
+  host: fraud-api.myapp.it.com
+  tlsIssuer: fraudapp-encryption-prod
+
+# ==== Monitoring ====
+monitoring:
+  grafanaServiceName: prometheus-grafana
+  grafanaNamespace: monitoring
+  grafanaPort: 80

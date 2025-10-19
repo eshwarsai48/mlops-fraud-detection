@@ -12,6 +12,8 @@ resource "azurerm_kubernetes_cluster" "rm_aks_dev" {
   }
 
   identity { type = "SystemAssigned" }
+
+
 }
 
 resource "azurerm_role_assignment" "aks_acr_pull" {
@@ -19,7 +21,6 @@ resource "azurerm_role_assignment" "aks_acr_pull" {
   role_definition_name = "AcrPull"
   scope                = var.acr_id
 }
-
 
 data "azurerm_resource_group" "dev_rg" {
   name = var.resource_group_name
@@ -30,4 +31,6 @@ resource "azurerm_role_assignment" "aks_network_contributor" {
   role_definition_name = "Network Contributor"
   scope                = data.azurerm_resource_group.dev_rg.id
 }
+
+
 
