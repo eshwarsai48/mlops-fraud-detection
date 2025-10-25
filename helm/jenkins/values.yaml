@@ -1,0 +1,52 @@
+jenkins:
+  controller:
+    image:
+      repository: jenkins/jenkins
+      tag: lts
+    admin:
+      username: admin
+    serviceType: LoadBalancer
+
+    resources:
+      requests: { cpu: "200m", memory: "512Mi" }
+      limits:   { cpu: "500m", memory: "1Gi" }
+
+    installPlugins:
+      - kubernetes
+      - workflow-aggregator
+      - git
+
+
+    additionalVolumes:
+      - name: kubeconfig
+        secret: { secretName: jenkins-kubeconfig }
+    additionalVolumeMounts:
+      - name: kubeconfig
+        mountPath: /var/run/secrets/kubeconfig
+        readOnly: true
+    env:
+      - { name: KUBECONFIG, value: /var/run/secrets/kubeconfig/kubeconfig }
+
+    sidecars:
+      configAutoReload: { enabled: true }
+
+
+    initContainers:
+      - name: install-tools
+        image: jenkins/jenkins:lts
+        command: [ "sh", "-c", '
+          curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" &&
+          chmod +x kubectl && mv kubectl /usr/local/bin/kubectl
+        ' ]
+        volumeMounts:
+          - { name: tools, mountPath: /usr/local/bin }
+
+    extraVolumes:
+      - { name: tools, emptyDir: {} }
+    extraVolumeMounts:
+      - { name: tools, mountPath: /usr/local/bin }
+
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: default
