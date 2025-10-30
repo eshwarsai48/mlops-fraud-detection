@@ -48,3 +48,4 @@ Data/
 *.joblib
 *.json
 model/
+kubeconfig
