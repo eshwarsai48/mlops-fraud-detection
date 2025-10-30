@@ -1,52 +1,100 @@
-jenkins:
-  controller:
-    image:
-      repository: jenkins/jenkins
-      tag: lts
-    admin:
-      username: admin
-    serviceType: LoadBalancer
+controller:
+  image:
+    repository: jenkins/jenkins
+    tag: lts
 
-    resources:
-      requests: { cpu: "200m", memory: "512Mi" }
-      limits:   { cpu: "500m", memory: "1Gi" }
+  admin:
+    username: admin
 
-    installPlugins:
-      - kubernetes
-      - workflow-aggregator
-      - git
+  serviceType: LoadBalancer
+  servicePort: 8080
 
+  serviceAnnotations:
+    service.beta.kubernetes.io/azure-load-balancer-resource-group: mlops-dev-rg
+    service.beta.kubernetes.io/azure-load-balancer-ipv4: 52.234.153.72
+    service.beta.kubernetes.io/azure-load-balancer-internal: "false"
 
-    additionalVolumes:
-      - name: kubeconfig
-        secret: { secretName: jenkins-kubeconfig }
-    additionalVolumeMounts:
-      - name: kubeconfig
-        mountPath: /var/run/secrets/kubeconfig
-        readOnly: true
-    env:
-      - { name: KUBECONFIG, value: /var/run/secrets/kubeconfig/kubeconfig }
+  jenkinsUrl: "http://52.234.153.72:8080"
 
-    sidecars:
-      configAutoReload: { enabled: true }
+  resources:
+    requests:
+      cpu: "200m"
+      memory: "512Mi"
+    limits:
+      cpu: "500m"
+      memory: "1Gi"
 
+  installPlugins:
+    - kubernetes
+    - workflow-aggregator
+    - git
 
-    initContainers:
-      - name: install-tools
-        image: jenkins/jenkins:lts
-        command: [ "sh", "-c", '
+  additionalVolumes:
+    - name: kubeconfig
+      secret:
+        secretName: jenkins-kubeconfig
+
+  additionalVolumeMounts:
+    - name: kubeconfig
+      mountPath: /var/run/secrets/kubeconfig
+      readOnly: true
+
+  env:
+    - name: KUBECONFIG
+      value: /var/run/secrets/kubeconfig/kubeconfig
+
+  sidecars:
+    configAutoReload:
+      enabled: true
+
+  initContainers:
+    - name: install-tools
+      image: jenkins/jenkins:lts
+      command:
+        - sh
+        - -c
+        - |
           curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" &&
           chmod +x kubectl && mv kubectl /usr/local/bin/kubectl
-        ' ]
-        volumeMounts:
-          - { name: tools, mountPath: /usr/local/bin }
+      volumeMounts:
+        - name: tools
+          mountPath: /usr/local/bin
 
-    extraVolumes:
-      - { name: tools, emptyDir: {} }
-    extraVolumeMounts:
-      - { name: tools, mountPath: /usr/local/bin }
+  extraVolumes:
+    - name: tools
+      emptyDir: {}
+  extraVolumeMounts:
+    - name: tools
+      mountPath: /usr/local/bin
 
-  persistence:
-    enabled: true
-    size: 10Gi
-    storageClass: default
+persistence:
+  enabled: true
+  size: 10Gi
+  storageClass: default
+
+JCasC:
+  configScripts:
+    kaniko-agent-config: |
+      jenkins:
+        clouds:
+          - kubernetes:
+              name: "kubernetes"
+              namespace: "jenkins"
+              jenkinsUrl: "http://jenkins:8080"
+              jenkinsTunnel: "jenkins-agent:50000"
+              containerCapStr: "10"
+              templates:
+                - name: "kaniko"
+                  label: "kaniko"
+                  serviceAccount: "default"
+                  containers:
+                    - name: "kaniko"
+                      image: "gcr.io/kaniko-project/executor:latest"
+                      ttyEnabled: true
+                      volumeMounts:
+                        - mountPath: "/kaniko/.docker"
+                          name: "acr-auth"
+                  volumes:
+                    - type: "Secret"
+                      secretName: "acr-auth"
+                      mountPath: "/kaniko/.docker"

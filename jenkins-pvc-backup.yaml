@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    pv.kubernetes.io/bind-completed: "yes"
+    pv.kubernetes.io/bound-by-controller: "yes"
+    volume.beta.kubernetes.io/storage-provisioner: disk.csi.azure.com
+    volume.kubernetes.io/selected-node: aks-default-14051332-vmss000009
+    volume.kubernetes.io/storage-provisioner: disk.csi.azure.com
+  creationTimestamp: "2025-10-25T17:13:04Z"
+  finalizers:
+  - kubernetes.io/pvc-protection
+  labels:
+    app.kubernetes.io/component: jenkins-controller
+    app.kubernetes.io/instance: jenkins
+    app.kubernetes.io/name: jenkins
+    helm.sh/chart: jenkins-5.8.104
+  name: jenkins
+  namespace: jenkins
+  resourceVersion: "13118439"
+  uid: 8daa8755-d9c3-4966-9e47-ab66a144f1d0
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: default
+  volumeMode: Filesystem
+  volumeName: pvc-8daa8755-d9c3-4966-9e47-ab66a144f1d0
+status:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 10Gi
+  phase: Bound

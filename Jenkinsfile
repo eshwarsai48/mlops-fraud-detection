@@ -2,10 +2,10 @@ pipeline {
   agent any
 
   environment {
-    ACR_NAME = "mlopsdevacr2025"
+    ACR_NAME   = "mlopsdevacr2025"
     IMAGE_NAME = "fraud-api"
-    IMAGE_TAG = "latest"
-    REGISTRY = "${ACR_NAME}.azurecr.io"
+    IMAGE_TAG  = "latest"
+    REGISTRY   = "${ACR_NAME}.azurecr.io"
     CHART_PATH = "helm/fraud-api"
     RELEASE_NAME = "fraud-api"
     NAMESPACE = "default"
@@ -19,46 +19,32 @@ pipeline {
       }
     }
 
-    stage('Build Docker image') {
+    stage('Build and Push Image with Kaniko') {
+      agent { label 'kaniko' }
       steps {
-        script {
-          echo "Building Docker image..."
-          sh "docker build -t ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} ."
-        }
-      }
-    }
-
-    stage('Login to ACR') {
-      steps {
-        script {
-          withCredentials([usernamePassword(credentialsId: 'acr-creds',
-                                            usernameVariable: 'ACR_USER',
-                                            passwordVariable: 'ACR_PASS')]) {
-            sh 'echo $ACR_PASS | docker login ${REGISTRY} -u $ACR_USER --password-stdin'
-          }
-        }
-      }
-    }
-
-    stage('Push image to ACR') {
-      steps {
-        echo "Pushing image ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
-        sh "docker push ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
+        echo "Building and pushing Docker image with Kaniko..."
+        sh """
+          /kaniko/executor \
+            --context ${WORKSPACE} \
+            --dockerfile ${WORKSPACE}/Dockerfile \
+            --destination ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG} \
+            --skip-tls-verify \
+            --insecure
+        """
       }
     }
 
     stage('Deploy to AKS via Helm') {
+      agent any
       steps {
-        script {
-          echo "Deploying new image to AKS..."
-          sh """
-            helm upgrade --install ${RELEASE_NAME} ${CHART_PATH} \
-              --namespace ${NAMESPACE} \
-              --set image.repository=${REGISTRY}/${IMAGE_NAME} \
-              --set image.tag=${IMAGE_TAG} \
-              --set image.pullPolicy=Always
-          """
-        }
+        echo "Deploying new image to AKS..."
+        sh """
+          helm upgrade --install ${RELEASE_NAME} ${CHART_PATH} \
+            --namespace ${NAMESPACE} \
+            --set image.repository=${REGISTRY}/${IMAGE_NAME} \
+            --set image.tag=${IMAGE_TAG} \
+            --set image.pullPolicy=Always
+        """
       }
     }
   }
