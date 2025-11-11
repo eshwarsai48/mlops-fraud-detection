@@ -1,100 +1,128 @@
-controller:
-  image:
-    repository: jenkins/jenkins
-    tag: lts
+jenkins:
+  controller:
+    image:
+      repository: jenkins/jenkins
+      tag: lts
 
-  admin:
-    username: admin
+    serviceType: LoadBalancer
+    servicePort: 8080
+    targetPort: 8080
+    loadBalancerIP: "52.234.153.72"
+    serviceAnnotations:
+      service.beta.kubernetes.io/azure-load-balancer-resource-group: mlops-dev-rg
+      service.beta.kubernetes.io/azure-load-balancer-ipv4: 52.234.153.72
+      service.beta.kubernetes.io/azure-load-balancer-internal: "false"
 
-  serviceType: LoadBalancer
-  servicePort: 8080
+    jenkinsUrl: "http://52.234.153.72:8080"
 
-  serviceAnnotations:
-    service.beta.kubernetes.io/azure-load-balancer-resource-group: mlops-dev-rg
-    service.beta.kubernetes.io/azure-load-balancer-ipv4: 52.234.153.72
-    service.beta.kubernetes.io/azure-load-balancer-internal: "false"
+    envFromSecret: jenkins-credentials
+    env:
+      - name: KUBECONFIG
+        value: /var/run/secrets/kubeconfig/kubeconfig
 
-  jenkinsUrl: "http://52.234.153.72:8080"
+    additionalVolumes:
+      - name: kubeconfig
+        secret:
+          secretName: jenkins-kubeconfig
+    additionalVolumeMounts:
+      - name: kubeconfig
+        mountPath: /var/run/secrets/kubeconfig
+        readOnly: true
 
-  resources:
-    requests:
-      cpu: "200m"
-      memory: "512Mi"
-    limits:
-      cpu: "500m"
-      memory: "1Gi"
+    initContainers:
+      - name: install-kubectl
+        image: bitnami/kubectl:latest
+        command: ["sh", "-c", "cp /usr/bin/kubectl /tools/kubectl"]
+        volumeMounts:
+          - mountPath: /tools
+            name: tools
 
-  installPlugins:
-    - kubernetes
-    - workflow-aggregator
-    - git
+    extraVolumes:
+      - name: tools
+        emptyDir: {}
+    extraVolumeMounts:
+      - name: tools
+        mountPath: /usr/local/bin
 
-  additionalVolumes:
-    - name: kubeconfig
-      secret:
-        secretName: jenkins-kubeconfig
+    installPlugins:
+      - kubernetes:latest
+      - configuration-as-code:latest
+      - workflow-job:latest
+      - credentials:latest
+      - git:latest
 
-  additionalVolumeMounts:
-    - name: kubeconfig
-      mountPath: /var/run/secrets/kubeconfig
-      readOnly: true
+    # 👇 Correct place for overrides on Helm 5.8+
+    JCasC:
+      defaultConfig: false
+      overrides:
+        configScripts:
 
-  env:
-    - name: KUBECONFIG
-      value: /var/run/secrets/kubeconfig/kubeconfig
+          secrets.yaml: |
+            unclassified:
+              secretSources:
+                - environment: {}
 
-  sidecars:
-    configAutoReload:
-      enabled: true
+          credentials.yaml: |
+            credentials:
+              system:
+                domainCredentials:
+                  - credentials:
+                      - usernamePassword:
+                          scope: GLOBAL
+                          id: "acr-credentials"
+                          username: "${ACR_USERNAME}"
+                          password: "${ACR_PASSWORD}"
+                          description: "Azure ACR credentials"
+                      - string:
+                          scope: GLOBAL
+                          id: "github-pat"
+                          secret: "${GITHUB_TOKEN}"
+                          description: "GitHub PAT"
 
-  initContainers:
-    - name: install-tools
-      image: jenkins/jenkins:lts
-      command:
-        - sh
-        - -c
-        - |
-          curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" &&
-          chmod +x kubectl && mv kubectl /usr/local/bin/kubectl
-      volumeMounts:
-        - name: tools
-          mountPath: /usr/local/bin
+          jenkins.yaml: |
+            jenkins:
+              systemMessage: "Jenkins configured via Helm (JCasC.overrides)"
+              numExecutors: 2
+              clouds:
+                - kubernetes:
+                    name: "kubernetes"
+                    serverUrl: "https://kubernetes.default.svc.cluster.local"
+                    namespace: "jenkins"
+                    jenkinsUrl: "http://jenkins:8080"
+                    containerCapStr: "10"
+                    templates:
+                      - name: "kaniko"
+                        label: "kaniko"
+                        serviceAccount: "default"
+                        containers:
+                          - name: "kaniko"
+                            image: "gcr.io/kaniko-project/executor:latest"
+                            command: ["cat"]
+                            ttyEnabled: true
+                            volumeMounts:
+                              - mountPath: "/kaniko/.docker"
+                                name: "acr-config"
+                        volumes:
+                          - secretVolume:
+                              mountPath: "/kaniko/.docker"
+                              secretName: "acr-basic-auth"
 
-  extraVolumes:
-    - name: tools
-      emptyDir: {}
-  extraVolumeMounts:
-    - name: tools
-      mountPath: /usr/local/bin
+    sidecars:
+      configAutoReload:
+        enabled: true
+
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+
+    admin:
+      username: admin
 
 persistence:
   enabled: true
   size: 10Gi
   storageClass: default
-
-JCasC:
-  configScripts:
-    kaniko-agent-config: |
-      jenkins:
-        clouds:
-          - kubernetes:
-              name: "kubernetes"
-              namespace: "jenkins"
-              jenkinsUrl: "http://jenkins:8080"
-              jenkinsTunnel: "jenkins-agent:50000"
-              containerCapStr: "10"
-              templates:
-                - name: "kaniko"
-                  label: "kaniko"
-                  serviceAccount: "default"
-                  containers:
-                    - name: "kaniko"
-                      image: "gcr.io/kaniko-project/executor:latest"
-                      ttyEnabled: true
-                      volumeMounts:
-                        - mountPath: "/kaniko/.docker"
-                          name: "acr-auth"
-                  volumes:
-                    - type: "Secret"
-                      secretName: "acr-auth"
-                      mountPath: "/kaniko/.docker"

@@ -58,3 +58,10 @@ pipeline {
     }
   }
 }
+
+
+az ad sp create-for-rbac \
+  --name github-mlops-deployer \
+  --role contributor \
+  --scopes /subscriptions/6a2461a4-b5bf-4d35-97cb-0184247fe647/resourceGroups/mlops-dev-rg \
+  --sdk-auth
