@@ -20,11 +20,42 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - containerPort: 8000
+
+          # ----------------------------
+          # ✅ Environment variables
+          # ----------------------------
           env:
+
             {{- range .Values.env }}
             - name: {{ .name }}
               value: "{{ .value }}"
             {{- end }}
+            - name: APP_VERSION
+              value: {{ .Chart.AppVersion | quote }}
+
+            # 2️⃣ Inject Azure Storage connection string securely from secret
+            - name: AZURE_STORAGE_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.modelStorage.secretName }}
+                  key: AZURE_STORAGE_CONNECTION_STRING
+
+
+            - name: AZURE_MODEL_CONTAINER
+              value: {{ .Values.modelStorage.containerName | quote }}
+            - name: AZURE_MODEL_BLOB
+              value: {{ .Values.modelStorage.blobName | quote }}
+
+          # ----------------------------
+          # ✅ Mount writable /model directory for downloaded model
+          # ----------------------------
+          volumeMounts:
+            - name: model-dir
+              mountPath: /model
+
+          # ----------------------------
+          # Resource requests/limits
+          # ----------------------------
           resources:
             requests:
               cpu: {{ .Values.resources.requests.cpu | quote }}
@@ -32,3 +63,10 @@ spec:
             limits:
               cpu: {{ .Values.resources.limits.cpu | quote }}
               memory: {{ .Values.resources.limits.memory | quote }}
+
+      # ----------------------------
+      # ✅ Declare emptyDir volume
+      # ----------------------------
+      volumes:
+        - name: model-dir
+          emptyDir: {}  # ephemeral storage cleared on pod restart

@@ -13,9 +13,16 @@ service:
   port: 80
 
 # ==== App Environment Variables ====
+
 env:
-  - name: MODEL_PATH
-    value: "model/pipeline.joblib"
+  - name: PYTHONUNBUFFERED
+    value: "1"
+
+
+modelStorage:
+  secretName: model-storage-secret        # Kubernetes Secret name that holds  Azure connection string
+  containerName: ml-models                # Azure Blob container where the model is stored
+  blobName: pipeline.joblib               # Blob (model file) name inside the container
 
 # ==== Resources ====
 resources:

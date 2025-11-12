@@ -38,3 +38,14 @@ variable "prefix" {
   description = "Prefix used for naming resources"
   default     = "fraud" # or whatever short name you prefer
 }
+
+variable "tags" {
+  description = "A map of tags applied to all resources."
+  type        = map(string)
+  default = {
+    environment = "dev"
+    owner       = "eshwarsai"
+    project     = "mlops-fraud-detection"
+  }
+}
+

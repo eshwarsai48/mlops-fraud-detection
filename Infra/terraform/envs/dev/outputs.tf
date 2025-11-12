@@ -27,6 +27,11 @@ output "ingress_static_ip" {
   value = module.ingress_ip.ingress_ip
 }
 
+output "model_storage_connection_string" {
+  value     = module.model_storage.connection_string
+  sensitive = true
+}
+
 
 
 

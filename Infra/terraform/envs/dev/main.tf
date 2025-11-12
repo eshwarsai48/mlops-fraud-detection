@@ -23,6 +23,13 @@ module "aks" {
    acr_id              = module.acr.id
  }
 
+module "model_storage" {
+  source              = "../../modules/model_storage"
+  resource_group_name = module.resource_group.name
+  location            = module.resource_group.location
+  tags                = var.tags
+}
+
 
 module "dns" {
   source = "../../modules/dns"
