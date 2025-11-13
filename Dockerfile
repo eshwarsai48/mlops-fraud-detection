@@ -1,9 +1,10 @@
 # ---------- Base with system deps ----------
 FROM python:3.11-slim AS base
-ENV PYTHONDONTWRITEBYTECODE=1 \          # Avoid creating .pyc files
-    PYTHONUNBUFFERED=1 \                 # Ensure logs show up immediately
-    PIP_NO_CACHE_DIR=1 \                 # Avoid pip cache bloat
-    PIP_DISABLE_PIP_VERSION_CHECK=1      # Prevent version check messages
+# Avoid .pyc files, force unbuffered logging, and disable pip cache
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
 # Install essential build tools (only once in base image)
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -32,8 +33,8 @@ RUN pip install --no-index --find-links=/wheels /wheels/* && rm -rf /wheels  # I
 
 # ---------- COPY APPLICATION CODE ----------
 # Only copy code and configs — NOT the model folder (model will be fetched at runtime)
-COPY app /app/app                          # Application source code
-COPY ML /app/ML                            # Any helper scripts or logic
+COPY app /app/app
+COPY ML /app/ML
 COPY gunicorn_conf.py /app/gunicorn_conf.py
 
 
