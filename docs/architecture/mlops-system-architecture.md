@@ -7,7 +7,9 @@ It includes CI/CD, image building, container registry, Kubernetes deployment, an
 
 ## 📐 High-Level Architecture Diagram
 
+
 ![System Architecture](mlops-system-architecture.png)
+
 
 ---
 
