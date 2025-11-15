@@ -1,0 +1,55 @@
+flowchart LR
+    classDef azure fill:#0078D4,stroke:#fff,color:#fff
+    classDef github fill:#24292e,stroke:#fff,color:#fff
+    classDef docker fill:#0db7ed,stroke:#fff,color:#fff
+    classDef k8s fill:#326CE5,stroke:#fff,color:#fff
+    classDef helm fill:#8e44ad,stroke:#fff,color:#fff
+    classDef svc fill:#9b59b6,stroke:#fff,color:#fff
+    classDef pod fill:#4CAF50,stroke:#fff,color:#fff,font-weight:bold
+    classDef monitor fill:#f39c12,stroke:#fff,color:#fff
+
+    Dev((Developer<br/>Push Code)):::github
+
+    subgraph GitHub["GitHub Repository"]
+        Repo[Source Code<br/>mlops-fraud-detection]:::github
+        CI[GitHub Actions / Jenkins Pipeline]:::github
+    end
+
+    subgraph Build["Build & Push"]
+        Buildx[Docker Buildx<br/>Multi-Arch Build]:::docker
+        ACR[(Azure Container Registry)]:::azure
+    end
+
+    subgraph Deploy["AKS Deployment Pipeline"]
+        Helm[Helm Chart<br/>values.yaml + templates]:::helm
+        AKS[(Azure Kubernetes Service)]:::azure
+        DeployYAML[K8s Deployment<br/>fraud-api]:::k8s
+        SVC[[Service<br/>ClusterIP/LoadBalancer]]:::svc
+        Ingress[Ingress Controller<br/>Nginx]:::k8s
+        Pods((fraud-api Pods)):::pod
+    end
+
+    subgraph Monitor["Monitoring"]
+        Prom[Prometheus<br/>/metrics scrape]:::monitor
+        Graf[Grafana<br/>Dashboards & Alerts]:::monitor
+    end
+
+    Dev --> Repo
+    Repo --> CI
+    CI --> Buildx
+    Buildx --> ACR
+
+    CI --> Helm
+    Helm --> AKS
+
+    AKS --> DeployYAML
+    DeployYAML --> Pods
+    Pods --> SVC
+    SVC --> Ingress
+
+    Pods -->|Metrics| Prom
+    Prom --> Graf
+    Graf -->|Alerts| Dev
+
+    ACR -. image pull .-> Helm
+    ACR -. image pull .-> DeployYAML
