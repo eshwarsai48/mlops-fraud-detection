@@ -29,4 +29,64 @@ The caller can be:
 - A batch risk engine
 
 They send an HTTPS request to:
+POST https://api.fraudservice.com/predict
+
+---
+
+### **2. Ingress Controller (Nginx)**
+- Entry point to the AKS cluster  
+- Handles TLS/HTTPS  
+- Routes based on hostname and path  
+- Forwards traffic to:  
+  `fraud-api-service.default.svc.cluster.local`
+
+---
+
+### **3. Kubernetes Service (fraud-api Service)**
+- Internal stable endpoint  
+- Performs load balancing across Fraud API pods  
+- Ensures requests are distributed correctly
+
+---
+
+### **4. Fraud API Pods**
+Each pod:
+- Hosts the fraud detection model  
+- Runs your FastAPI app  
+- Executes inference  
+- Returns JSON response
+
+Kubernetes may run **1+ pods** depending on replica count.
+
+---
+
+### **5. Response Back to User**
+The response flows:
+Pod → Service → Ingress → User
+
+
+---
+
+## 📦 Example Request
+
+```bash
+POST /predict
+Content-Type: application/json
+
+{
+  "amount": 189.70,
+  "transaction_type": "online",
+  "merchant_id": "AMZ112201"
+}
+
+📦 Example Response
+{
+  "fraud_score": 0.91,
+  "is_fraud": true,
+  "explanation": "Unusual merchant + high amount"
+}
+
+
+
+
 
