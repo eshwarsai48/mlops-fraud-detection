@@ -1,3 +1,32 @@
+# MLOps Fraud Detection Project
+
+## Overview
+This project is an **end-to-end MLOps pipeline** for a Fraud Detection machine learning model. 
+It covers the entire lifecycle from **model training** to **deployment on Azure Kubernetes Service (AKS)**, 
+including **monitoring with Prometheus & Azure Monitor** and **CI/CD with GitHub Actions**.
+
+## Tech Stack
+- **ML**: Python, scikit-learn, pandas, joblib
+- **API**: FastAPI, Uvicorn
+- **Containerization**: Docker
+- **Infrastructure as Code**: Terraform
+- **Configuration Management**: Ansible
+- **Orchestration**: Kubernetes (AKS)
+- **Deployment Management**: Helm
+- **Monitoring**: Prometheus, Grafana, Azure Monitor
+- **CI/CD**: GitHub Actions
+
+## High-Level Flow
+1. Train a fraud detection ML model
+2. Serve it via a FastAPI inference service
+4. Dockerize the API
+Swagger UI → http://localhost:8000/docs
+Healthcheck → http://localhost:8000/healthcheck
+ReDoc → http://localhost:8000/
+6. Provision infrastructure with Terraform
+7. Deploy container to AKS using Helm
+8. Monitor with Prometheus & Azure Monitor
+9. Automate deployment with GitHub Actions
 # 🧠 Fraud Detection MLOps Platform
 
 Welcome to the **Fraud Detection MLOps Platform**, a production-ready cloud-native system that includes:
@@ -11,90 +40,6 @@ Welcome to the **Fraud Detection MLOps Platform**, a production-ready cloud-nati
 * **Prometheus & Grafana** for monitoring and observability
 
 This project follows a documentation structure inspired by top engineering organizations such as **Stripe**, **Airbnb**, **Coinbase**, and **Shopify**.
-
----
-
-## 🚀 End-to-End MLOps Lifecycle Flow
-
-Below is the complete lifecycle of the Fraud Detection platform — from model development, to API serving, CI/CD automation, container registry, Kubernetes deployment, monitoring, and finally the user request/response lifecycle.
-
-```mermaid
-flowchart LR
-
-    %% ======= ML Stage =======
-    subgraph ML[Stage 1: Machine Learning]
-        Train[Train Fraud Model]
-        Export[Export Model - model.pkl]
-    end
-
-    %% ======= FastAPI Stage =======
-    subgraph API[Stage 2: FastAPI Application]
-        FastAPI[FastAPI App]
-        Gunicorn[Gunicorn Runner]
-    end
-
-    %% ======= Docker Build =======
-    subgraph Docker[Stage 3: Docker Build]
-        DFile[Dockerfile]
-        Buildx[Docker Buildx]
-    end
-
-    %% ======= GitHub Actions =======
-    subgraph CI[Stage 4: GitHub Actions CICD]
-        Repo[GitHub Repo]
-        Actions[deploy.yml Workflow]
-        ACR[Azure Container Registry]
-    end
-
-    %% ======= Infrastructure =======
-    subgraph Infra[Stage 5: Terraform Infra]
-        TF[Terraform Creates AKS and ACR]
-    end
-
-    %% ======= Helm + AKS Deployment =======
-    subgraph Deploy[Stage 6: Helm and Kubernetes]
-        Helm[Helm Chart]
-        AKS[Azure Kubernetes Service]
-        DeployYAML[K8s Deployment]
-        Service[K8s Service - ClusterIP]
-        Ingress[Ingress Controller]
-        Pods[fraud-api Pods]
-    end
-
-    %% ======= Monitoring =======
-    subgraph Monitor[Stage 7: Monitoring]
-        Prom[Prometheus metrics]
-        Graf[Grafana Dashboards]
-    end
-
-    %% ======= User Flow =======
-    subgraph UserFlow[Stage 8: User API Flow]
-        User[Client or Merchant]
-        Predict[POST /predict]
-    end
-
-    %% ======= Connections =======
-
-    Train --> Export --> FastAPI --> Gunicorn --> DFile --> Buildx
-
-    Repo --> Actions
-    Actions -->|Build and Push| ACR
-    Buildx -->|Push Image| ACR
-
-    TF --> AKS
-
-    ACR -->|Pull Image| Helm
-    Helm --> AKS --> DeployYAML --> Pods
-    Pods --> Service --> Ingress
-
-    User -->|POST /predict| Predict --> Ingress
-    Ingress --> Service --> Pods
-    Pods -->|JSON Response| User
-
-    Pods -->|metrics| Prom --> Graf
-```
-
-```
 
 ---
 
