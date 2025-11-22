@@ -14,6 +14,78 @@ This project follows a documentation structure inspired by top engineering organ
 
 ---
 
+## 🚀 End-to-End MLOps Lifecycle Flow
+
+Below is the complete lifecycle of the Fraud Detection platform — from model development, to API serving, CI/CD automation, container registry, Kubernetes deployment, monitoring, and finally the user request/response lifecycle.
+
+```mermaid
+flowchart LR
+
+    subgraph ML["Stage 1: Machine Learning"]
+        Train[Train Fraud Model]
+        Export[Export Model (model.pkl)]
+    end
+
+    subgraph API["Stage 2: FastAPI Application"]
+        FastAPI[FastAPI App]
+        Gunicorn[Gunicorn Runner]
+    end
+
+    subgraph Docker["Stage 3: Docker Build"]
+        DFile[Dockerfile]
+        Buildx[Docker Buildx]
+    end
+
+    subgraph CI["Stage 4: GitHub Actions CI/CD"]
+        Repo[GitHub Repo]
+        Actions[deploy.yml Workflow]
+        ACR[(Azure Container Registry)]
+    end
+
+    subgraph Infra["Stage 5: Terraform Infra"]
+        TF[Terraform Creates AKS + ACR]
+    end
+
+    subgraph Deploy["Stage 6: Helm + Kubernetes"]
+        Helm[Helm Chart]
+        AKS[(Azure Kubernetes Service)]
+        DeployYAML[K8s Deployment]
+        Service[K8s Service (ClusterIP)]
+        Ingress[Ingress Controller]
+        Pods[(fraud-api Pods)]
+    end
+
+    subgraph Monitor["Stage 7: Monitoring"]
+        Prom[Prometheus /metrics]
+        Graf[Grafana Dashboards]
+    end
+
+    subgraph UserFlow["Stage 8: User API Flow"]
+        User[Client / Merchant]
+        Predict[/POST /predict/]
+    end
+
+    Train --> Export --> FastAPI --> Gunicorn --> DFile --> Buildx
+
+    Repo --> Actions
+    Actions -->|Build & Push| ACR
+    Buildx -->|Push Image| ACR
+
+    TF --> AKS
+
+    ACR -->|Pull Image| Helm
+    Helm --> AKS --> DeployYAML --> Pods
+    Pods --> Service --> Ingress
+
+    User -->|POST /predict| Predict --> Ingress
+    Ingress --> Service --> Pods
+    Pods -->|JSON Response| User
+
+    Pods -->|/metrics| Prom --> Graf
+```
+
+---
+
 ## 🏗️ System Architecture
 
 A deep dive into the internal architecture: CI/CD, deployments, networking, pods, and observability.
