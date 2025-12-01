@@ -29,7 +29,7 @@ The caller can be:
 - A batch risk engine
 
 They send an HTTPS request to:
-POST https://api.fraudservice.com/predict
+GET http://fraud-api.myapp.it.com/predict
 
 ---
 
